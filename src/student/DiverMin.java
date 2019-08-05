@@ -1,7 +1,9 @@
 package student;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -16,6 +18,7 @@ import a4.Heap;
 //import com.sun.tools.javac.code.Scope.StarImportScope;
 
 import a5.GraphAlgorithms;
+import game.Edge;
 import game.FindState;
 import game.FleeState;
 import game.GameState;
@@ -119,8 +122,111 @@ public class DiverMin implements SewerDiver {
 	 * the exit. */
 	@Override
 	public void flee(FleeState state) {
-		throw new NotImplementedError();
+		greedyFlee(state);
+	}
+	
+	/**
+	 * Moves to neighbor with the most coins unless only enough walks to get to exit or 
+	 * all neighbors have zero coins. If no neighbors have gems, it finds a feasible path.
+	 * */
+	public void greedyFlee(FleeState state) {
+		while(state.currentNode()!=state.getExit()) {
+			Comparator<Integer> cmp = Comparator.naturalOrder();
+			Heap<Node, Integer> coinHeap = new Heap<Node, Integer>(cmp);
+			
+			for(Edge e: state.currentNode().getExits()) {
+				e = new Edge(state.currentNode(),e.getDest(), e.length);
+				Node neighbor = e.getOther(state.currentNode());
+				
+				if(e.length+pathWeight(GraphAlgorithms.shortestPath(neighbor, state.getExit()))
+						<= state.stepsLeft()){
+							coinHeap.add(neighbor, -neighbor.getTile().coins());
+						}
+			}
+				Node next = coinHeap.poll();
+				if(state.currentNode().getTile().coins()>0) state.moveTo(next);
+				else {
+					Node flee = feasibleFlee(state);
+					if(flee == null) {
+						fleeShortestPath(state, state.getExit());
+					}
+					else {
+						fleeShortestPath(state, flee);
+					}
+				}
+			}			
+	}	
+	
+	/**
+	 * Moves along path by Dijkstra's Shortest Path Algorithm
+	 * 
+	 * @param
+	 * last - the last node of a path
+	 * */
+	public void fleeShortestPath(FleeState state, Node last) {
+		List<Node> path = null;
+		path = GraphAlgorithms.shortestPath(state.currentNode(), last);
 		
+		path.remove(0);
+		for(Node n:path) {
+			state.moveTo(n);
+		}
+	}
+	
+	/**
+	 * Finds all the shortest paths to all nodes with coins and returns node with 
+	 * the lowest distance:coin ratio that can be reached afterwards.
+	 * 
+	 * Returns null if no such node exists
+	 */
+	public Node feasibleFlee(FleeState state) {
+		Collection<Node> nodes = state.allNodes();
+		Comparator<Double> cmp = Comparator.naturalOrder();
+		Heap<Node, Double> coinHeap = new Heap<Node, Double>(cmp);
+		HashMap<Node,Double> nodeData = new HashMap<Node, Double>(); 
+		
+		for (Node n: nodes){
+			if(n.getTile().coins()>0) {
+				double dist = pathWeight(GraphAlgorithms.shortestPath(state.currentNode(), n));
+				nodeData.put(n, dist);
+				coinHeap.add(n, dist/n.getTile().coins());
+			}
+		}
+		
+		double currentToExit=0;
+		int startToExit = Integer.MAX_VALUE;
+		Node maxCoin = null;
+		boolean isFeasible =false;
+		while(!isFeasible) {
+			if(coinHeap.size() == 0) return null;
+			maxCoin = coinHeap.poll();
+			if(maxCoin == state.currentNode()) maxCoin = coinHeap.poll();
+			currentToExit = nodeData.get(maxCoin);
+			startToExit = pathWeight(GraphAlgorithms.shortestPath(maxCoin, state.getExit()));
+			isFeasible = (currentToExit + startToExit)<=state.stepsLeft();
+		}
+		return maxCoin;
+	}
+	
+	/**
+	 * Returns the sum of the weights of the edges on a path
+	 * 
+	 * @param
+	 * path - path of nodes traversed 
+	 * */
+	public static int pathWeight(List<Node> path) {
+		if(path.size()==0) return 0;
+		synchronized(path) {
+			Iterator<Node> iter = path.iterator();
+			Node p = iter.next();
+			int s = 0;
+			while(iter.hasNext()) {
+				Node q = iter.next();
+				s = s+p.getEdge(q).length;
+				p = q;
+			}
+			return s;
+		}
 	}
 	
 	
