@@ -1,4 +1,4 @@
-package a5;
+package student;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -18,7 +18,7 @@ import student.FindNode;
 
 /** We've provided depth-first search as an example; you need to implement Dijkstra's algorithm.
  */
-public class GraphAlgorithms  {
+public class ShortesrtPath  {
 	/** Return the Nodes reachable from start in depth-first-search order */
 	public static <N extends Node<N,E>, E extends Edge<N,E>>
 	List<N> dfs(N start) {
@@ -55,7 +55,7 @@ public class GraphAlgorithms  {
 	 * @param endNode   The node to find
 	 */
 	public static <N extends Node<N,E>, E extends LabeledEdge<N,E,Integer>>
-	List<N> shortestPath(N startNode,N endNode) {
+	List<N> shortestPath(N startNode, N endNode) {
 		Heap<N, Integer> frontier=new Heap<N, Integer>(new NodeComparator());
 		Heap<N, Integer> settled=new Heap<N, Integer>(new NodeComparator());
 		HashMap<N, N> finalPath= new HashMap<N, N>(); // the second N is the last Node before get to the first Node

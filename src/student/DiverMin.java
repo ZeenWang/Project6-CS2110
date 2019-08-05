@@ -3,6 +3,7 @@ package student;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -54,34 +55,40 @@ public class DiverMin implements SewerDiver {
 	 * Some modification is necessary to make the search better, in general. */
 	@Override
 	public void find(FindState state) {
-		//Heap<Long, Integer> worklist= new Heap<Long, Integer>(new NodeComparator());
-		Stack<Long> worklist = new Stack<Long>();
+		Heap<Long, Integer> worklist= new Heap<Long, Integer>(new NodeComparator());
+		//Stack<Long> worklist = new Stack<Long>();
 		System.out.println(state.currentLocation() + "start");
 		
 		List<Long>  result   = new ArrayList<Long>();
-		List<Node> gameMap =new ArrayList<Node>();
+		AllWentNodes gameMap =new AllWentNodes();
 		visited.add(state.currentLocation());
+		gameMap.addNode(new FindNode(state.currentLocation()), null);
 		for (NodeStatus neighbor : state.neighbors()) {
 			if (!visited.contains(neighbor.getId())) {
-				worklist.add(neighbor.getId());
+				worklist.add(neighbor.getId(),state.distanceToRing());
 				System.out.println(neighbor.getId() + "worklist");
+				gameMap.addNode(new FindNode(neighbor.getId()), state.currentLocation());
 			}
 		}
 		
-		
-		
 		while (state.distanceToRing()!=0) {
-			Long next = worklist.pop();
+			Long next = worklist.poll();
 			System.out.println(next + "next");
-			state.moveTo(next);
+			//state.moveTo(next);
+			moveToHelper(next, gameMap, (GameState) state);
 			visited.add(next);
 			
-			gameMap.add();
 			result.add(next);
 			for (NodeStatus neighbor : state.neighbors()) {
 				System.out.println(neighbor.getId() + "neighbours");
-				if (!visited.contains(neighbor.getId()))
-					worklist.add(neighbor.getId());
+				if (!visited.contains(neighbor.getId())) {
+					if(!worklist.contain(neighbor.getId())) {
+						worklist.add(neighbor.getId(),neighbor.getDistanceToTarget());
+					}else {
+						worklist.changePriority(neighbor.getId(),neighbor.getDistanceToTarget());
+					}
+					gameMap.addNode(new FindNode(neighbor.getId()), next);
+				}
 			}
 		}
 	}
@@ -116,33 +123,55 @@ public class DiverMin implements SewerDiver {
 		
 	}
 	
+	
 	/**
-	 * helper method to help locate the current position(entrance of the driver)
-	 * @param state
-	 * @return
+	 * help move to a adjacent & not adjacent node with known shortest path
 	 */
-	public NodeStatus getStartNode(FindState state) {
-		Long id=state.currentLocation();
-		state.moveTo(id);
-		for (NodeStatus neighbour : state.neighbors()) {
-			//if(neighbour.)
+	private void moveToHelper(Long id,AllWentNodes gameMap,GameState state) {
+		FindNode startNode= gameMap.getNode(state.currentLocation());
+		FindNode endNode= gameMap.getNode(id);
+		List<FindNode> path=GraphAlgorithms.shortestPath(startNode, endNode);
+		System.out.println(path + " path" );
+		Iterator<FindNode> loopAllPath=path.iterator();
+		Long test=null;
+		if(loopAllPath.hasNext())
+			test =loopAllPath.next().getId();
+		while(loopAllPath.hasNext()) {
+			test =loopAllPath.next().getId();
+		//	System.out.println(path.iterator().next().getId());
+			state.moveTo(test);
+		}
+	}
+	
+	
+	public static class AllWentNodes extends ArrayList<FindNode>{
+		
+		/**
+		 * Serial UID
+		 */
+		private static final long serialVersionUID = 1L;
+		
+		public void addNode(FindNode newNode,Long connectedNodeID) {
+			this.add(newNode);
+			if(connectedNodeID != null) {
+				FindNode connectedNode=getNode(connectedNodeID);
+				FindEdge addEdge1= new FindEdge(newNode, connectedNode, 1);
+				FindEdge addEdge2= new FindEdge(connectedNode, newNode, 1);
+				connectedNode.addFindEdge(addEdge1);
+				connectedNode.addFindEdge(addEdge2);
+				newNode.addFindEdge(addEdge1);
+				newNode.addFindEdge(addEdge2);
+			}
+			
 		}
 		
-		
-		return null;
-		
-		
-	}
-	
-	/**
-	 * help move to a not adjacent node with known path
-	 */
-	private void moveToHelper(long id) {
-		
-	}
-	
-	
-	private void dfs(GameState state) {
+		public FindNode getNode(long id) {
+			for(int i=0;i<this.size();i++) {
+				if(this.get(i).getId()==id)
+					return this.get(i);
+			}
+			return null;
+		}
 		
 	}
 	/**
