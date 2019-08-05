@@ -1,20 +1,33 @@
 package student;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
+
+import javax.naming.LinkLoopException;
+
+import a4.Heap;
+
+//import com.sun.tools.javac.code.Scope.StarImportScope;
 
 import a5.GraphAlgorithms;
 import game.FindState;
 import game.FleeState;
+import game.GameState;
 import game.NodeStatus;
 import game.SewerDiver;
+import game.Sewers;
+import game.Tile;
 import game.Node;
 
 import common.NotImplementedError;
 
 public class DiverMin implements SewerDiver {
-
+	Set<Long>   visited  = new HashSet<Long>();
 	/** Get to the ring in as few steps as possible. Once you get there, <br>
 	 * you must return from this function in order to pick<br>
 	 * it up. If you continue to move after finding the ring rather <br>
@@ -41,8 +54,36 @@ public class DiverMin implements SewerDiver {
 	 * Some modification is necessary to make the search better, in general. */
 	@Override
 	public void find(FindState state) {
+		//Heap<Long, Integer> worklist= new Heap<Long, Integer>(new NodeComparator());
+		Stack<Long> worklist = new Stack<Long>();
+		System.out.println(state.currentLocation() + "start");
 		
-		state.currentLocation()
+		List<Long>  result   = new ArrayList<Long>();
+		List<Node> gameMap =new ArrayList<Node>();
+		visited.add(state.currentLocation());
+		for (NodeStatus neighbor : state.neighbors()) {
+			if (!visited.contains(neighbor.getId())) {
+				worklist.add(neighbor.getId());
+				System.out.println(neighbor.getId() + "worklist");
+			}
+		}
+		
+		
+		
+		while (state.distanceToRing()!=0) {
+			Long next = worklist.pop();
+			System.out.println(next + "next");
+			state.moveTo(next);
+			visited.add(next);
+			
+			gameMap.add();
+			result.add(next);
+			for (NodeStatus neighbor : state.neighbors()) {
+				System.out.println(neighbor.getId() + "neighbours");
+				if (!visited.contains(neighbor.getId()))
+					worklist.add(neighbor.getId());
+			}
+		}
 	}
 	
 	/** Flee the sewer system before the steps are all used, trying to <br>
@@ -72,6 +113,54 @@ public class DiverMin implements SewerDiver {
 	@Override
 	public void flee(FleeState state) {
 		throw new NotImplementedError();
+		
 	}
+	
+	/**
+	 * helper method to help locate the current position(entrance of the driver)
+	 * @param state
+	 * @return
+	 */
+	public NodeStatus getStartNode(FindState state) {
+		Long id=state.currentLocation();
+		state.moveTo(id);
+		for (NodeStatus neighbour : state.neighbors()) {
+			//if(neighbour.)
+		}
+		
+		
+		return null;
+		
+		
+	}
+	
+	/**
+	 * help move to a not adjacent node with known path
+	 */
+	private void moveToHelper(long id) {
+		
+	}
+	
+	
+	private void dfs(GameState state) {
+		
+	}
+	/**
+	 * comparator (give the smallest value)
+	 */
+	public static class NodeComparator implements Comparator<Integer>{
+		
+		public NodeComparator() {
+			super();
+		}
+		
+		@Override
+		public int compare(Integer o1, Integer o2) {
+			if(o1==o2)
+				return 0;
+			return o1<o2?1:-1;
+		}
+	}
+	
 
 }
